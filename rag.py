@@ -1,0 +1,773 @@
+import csv
+import hashlib
+import io
+import json
+import os
+import tempfile
+from pathlib import Path
+from typing import Any
+
+import streamlit as st
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
+# ============================================================
+# NEXORA Knowledge Studio — stable Streamlit multi-file RAG app
+# ============================================================
+
+st.set_page_config(
+    page_title="NEXORA | Knowledge Studio",
+    page_icon="✦",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# CSS is intentionally conservative so it doesn't hide Streamlit
+# controls or cause unreadable text in different Streamlit themes.
+st.markdown(
+    """
+    <style>
+    :root {
+      --nx-bg: #090b12;
+      --nx-panel: #111522;
+      --nx-panel-2: #171c2d;
+      --nx-line: rgba(190, 199, 255, .13);
+      --nx-text: #f4f6ff;
+      --nx-muted: #a8b0c7;
+      --nx-violet: #9b8cff;
+      --nx-cyan: #65e8f2;
+    }
+    html, body, [data-testid="stAppViewContainer"], .stApp {
+      background: var(--nx-bg) !important;
+      color: var(--nx-text) !important;
+    }
+    [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {
+      background: rgba(9,11,18,.96) !important;
+      color: var(--nx-text) !important;
+    }
+    [data-testid="stHeader"] { border-bottom: 1px solid rgba(255,255,255,.04); }
+    [data-testid="stSidebar"] {
+      background: linear-gradient(180deg, #101421 0%, #0b0e17 100%) !important;
+      border-right: 1px solid var(--nx-line);
+    }
+    [data-testid="stSidebar"] * { color: #e8ebf7; }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+      color: #a8b0c7 !important;
+    }
+    [data-testid="stMain"] .block-container {
+      max-width: 1480px;
+      padding-top: 2.2rem;
+      padding-bottom: 3rem;
+    }
+    h1, h2, h3, h4, p, label, .stMarkdown, [data-testid="stCaptionContainer"] {
+      color: var(--nx-text);
+    }
+    [data-testid="stCaptionContainer"] { color: var(--nx-muted) !important; }
+    [data-testid="stTextInput"] label, [data-testid="stSelectbox"] label,
+    [data-testid="stSlider"] label, [data-testid="stFileUploader"] label {
+      color: #c5cbe0 !important;
+      font-weight: 600;
+    }
+    input, textarea, [data-baseweb="select"] > div {
+      background: #171c2a !important;
+      color: #f5f6ff !important;
+      border-color: rgba(190,199,255,.18) !important;
+      border-radius: 12px !important;
+    }
+    [data-testid="stFileUploader"] section {
+      background: linear-gradient(145deg, rgba(155,140,255,.09), rgba(101,232,242,.035)) !important;
+      border: 1px dashed rgba(155,140,255,.45) !important;
+      border-radius: 16px !important;
+    }
+    [data-testid="stFileUploader"] section * { color: #e8ebf7 !important; }
+    .stButton > button, .stDownloadButton > button, [data-testid="stFormSubmitButton"] button {
+      background: linear-gradient(115deg, #9b8cff, #65dce9) !important;
+      color: #0a0d15 !important;
+      border: 0 !important;
+      border-radius: 12px !important;
+      font-weight: 750 !important;
+      min-height: 2.7rem;
+      box-shadow: 0 7px 22px rgba(110, 104, 245, .18);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .stButton > button:hover, .stDownloadButton > button:hover,
+    [data-testid="stFormSubmitButton"] button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(110, 104, 245, .28);
+    }
+    [data-testid="stSlider"] [role="slider"] { background: #a99bff !important; }
+    [data-testid="stSlider"] [data-baseweb="slider"] div { border-color: #a99bff; }
+    [data-testid="stAlert"] { border-radius: 13px; }
+    div[data-testid="stChatMessage"] {
+      border: 1px solid var(--nx-line);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+      padding: .8rem 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,.10);
+    }
+    .nx-brand {
+      display:flex; align-items:center; gap:.55rem;
+      font-size:1.03rem; font-weight:850; letter-spacing:-.035em;
+      padding:.55rem 0 1.1rem; border-bottom:1px solid var(--nx-line); margin-bottom:1rem;
+    }
+    .nx-mark {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border-radius:12px;
+      color:#10131b !important;
+      background:linear-gradient(145deg,#c3baff 0%,#8f80ff 45%,#65e8f2 100%);
+      box-shadow:0 7px 22px rgba(133,117,255,.32), inset 0 1px 0 rgba(255,255,255,.7);
+      font-size:1.2rem;
+    }
+    .nx-brand-name { color:#f4f6ff !important; }
+    .nx-brand-accent { color:#a99bff !important; }
+    .nx-hero {
+      position:relative; overflow:hidden;
+      padding:2.1rem 2.2rem; border-radius:26px; margin:.2rem 0 1.35rem;
+      border:1px solid rgba(190,199,255,.18);
+      background:
+        radial-gradient(ellipse at 90% 5%, rgba(101,232,242,.12), transparent 33%),
+        radial-gradient(ellipse at 70% 100%, rgba(155,140,255,.14), transparent 38%),
+        linear-gradient(135deg,#171b2c 0%,#111522 65%,#101923 100%);
+      box-shadow:0 24px 70px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.055);
+    }
+    .nx-eyebrow {
+      color:var(--nx-cyan); text-transform:uppercase; letter-spacing:.16em;
+      font-size:.72rem; font-weight:850;
+    }
+    .nx-title {
+      font-size:clamp(2rem,3.3vw,3.25rem); line-height:1.07; letter-spacing:-.06em;
+      font-weight:850; margin:.7rem 0 .9rem; color:#f4f6ff;
+    }
+    .nx-gradient-text {
+      background:linear-gradient(100deg,#b6aaff,#8e82ff 55%,#70e5ee);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .nx-muted { color:var(--nx-muted) !important; line-height:1.7; }
+    .nx-stat {
+      padding:1.15rem 1.25rem; border-radius:18px; min-height:102px;
+      border:1px solid var(--nx-line);
+      background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+      box-shadow:0 12px 30px rgba(0,0,0,.10), inset 0 1px 0 rgba(255,255,255,.035);
+    }
+    .nx-stat-label { color:#c2cbe0; font-size:.82rem; }
+    .nx-stat-value { font-size:1.65rem; font-weight:800; padding-top:.35rem; letter-spacing:-.04em; }
+    .nx-login-wrap {
+      max-width: 980px; margin: 4vh auto 0;
+      display:grid; grid-template-columns:1.05fr .95fr; gap:1.2rem; align-items:stretch;
+    }
+    .nx-login-art {
+      min-height:500px; position:relative; overflow:hidden; border-radius:30px;
+      padding:2.2rem; display:flex; flex-direction:column; justify-content:space-between;
+      border:1px solid rgba(190,199,255,.19);
+      background:
+        radial-gradient(ellipse at 25% 20%,rgba(101,232,242,.18),transparent 34%),
+        radial-gradient(ellipse at 78% 78%,rgba(155,140,255,.23),transparent 38%),
+        linear-gradient(145deg,#1b2035,#0e1320 68%,#111b27);
+      box-shadow:0 28px 85px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .nx-orb-stage { position:relative; height:245px; display:flex; align-items:center; justify-content:center; perspective:800px; }
+    .nx-orb {
+      width:180px; height:180px; border-radius:42px; transform:rotateX(17deg) rotateY(-24deg) rotateZ(-14deg);
+      background:
+        radial-gradient(circle at 28% 20%,rgba(255,255,255,.95),transparent 9%),
+        radial-gradient(circle at 30% 25%,#d6d0ff 0%,#8d7cff 19%,#5145a5 43%,#242b4d 68%,#111725 100%);
+      box-shadow:inset -18px -20px 35px rgba(0,0,0,.55), inset 8px 8px 22px rgba(255,255,255,.25),
+        0 24px 55px rgba(116,101,255,.35), 0 0 80px rgba(101,232,242,.12);
+      position:relative; animation:nx-float 6s ease-in-out infinite;
+    }
+    .nx-orb:before {
+      content:""; position:absolute; inset:20px; border-radius:30px;
+      border:1px solid rgba(255,255,255,.35); box-shadow:inset 0 0 25px rgba(255,255,255,.08);
+    }
+    .nx-orb:after {
+      content:"✦"; position:absolute; inset:0; display:grid; place-items:center;
+      color:#f7f7ff; font-size:4.2rem; text-shadow:0 0 24px rgba(255,255,255,.65);
+    }
+    .nx-orbit {
+      position:absolute; width:270px; height:100px; border:1px solid rgba(101,232,242,.55);
+      border-radius:50%; transform:rotate(-27deg); box-shadow:0 0 20px rgba(101,232,242,.09);
+    }
+    .nx-orbit.two { width:300px; height:125px; transform:rotate(43deg); border-color:rgba(169,155,255,.48); }
+    @keyframes nx-float { 0%,100%{transform:translateY(0) rotateX(17deg) rotateY(-24deg) rotateZ(-14deg)} 50%{transform:translateY(-12px) rotateX(22deg) rotateY(-16deg) rotateZ(-9deg)} }
+    [data-testid="stVerticalBlockBorderWrapper"] {
+      border-radius: 26px !important;
+      border: 1px solid rgba(190,199,255,.18) !important;
+      background: linear-gradient(145deg,rgba(27,32,50,.98),rgba(15,19,30,.98)) !important;
+      box-shadow: 0 28px 85px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.055);
+      padding: 1rem !important;
+    }
+    .nx-login-card {
+      padding:2rem; border-radius:30px; border:1px solid rgba(190,199,255,.18);
+      background:linear-gradient(145deg,rgba(27,32,50,.98),rgba(15,19,30,.98));
+      box-shadow:0 28px 85px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.055);
+      align-self:center;
+    }
+    .nx-login-heading { font-size:2rem; font-weight:850; letter-spacing:-.055em; margin:.5rem 0; color:#f4f6ff; }
+    .nx-login-note { color:var(--nx-muted); line-height:1.65; margin-bottom:1.4rem; }
+    .nx-pill {
+      display:inline-block; padding:.35rem .65rem; border-radius:999px;
+      border:1px solid rgba(101,232,242,.25); background:rgba(101,232,242,.07);
+      color:#8beaf0; font-size:.72rem; font-weight:750; letter-spacing:.04em;
+    }
+    /* High-contrast readability patch */
+    html, body, .stApp, [data-testid="stAppViewContainer"],
+    [data-testid="stMain"], [data-testid="stSidebar"],
+    [data-testid="stSidebar"] > div {
+      color: #f4f6ff !important;
+    }
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li,
+    [data-testid="stMarkdownContainer"] span,
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] *,
+    [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] *,
+    [data-testid="stHelp"],
+    [data-testid="stHelp"] *,
+    label, small, .stCaption, .stMarkdown p {
+      color: #d7dcef !important;
+      opacity: 1 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] small,
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+      color: #cbd2e6 !important;
+      opacity: 1 !important;
+    }
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stNumberInput"] input {
+      background: #1a2030 !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      border: 1px solid #59627a !important;
+      caret-color: #75e8f2 !important;
+    }
+    [data-testid="stTextInput"] input::placeholder,
+    [data-testid="stTextArea"] textarea::placeholder {
+      color: #9ba6bf !important;
+      -webkit-text-fill-color: #9ba6bf !important;
+      opacity: 1 !important;
+    }
+    [data-baseweb="select"] > div {
+      background: #1a2030 !important;
+      border: 1px solid #59627a !important;
+    }
+    [data-baseweb="select"] *,
+    [data-baseweb="popover"] *,
+    [role="listbox"] *,
+    [role="option"] {
+      color: #f4f6ff !important;
+    }
+    [data-baseweb="popover"], [role="listbox"] {
+      background: #171c2a !important;
+      border: 1px solid #59627a !important;
+    }
+    [role="option"]:hover, [aria-selected="true"] {
+      background: #303751 !important;
+    }
+    [data-testid="stFileUploader"] *,
+    [data-testid="stFileUploader"] small,
+    [data-testid="stFileUploader"] button {
+      color: #f4f6ff !important;
+      opacity: 1 !important;
+    }
+    [data-testid="stSlider"] *,
+    [data-testid="stSlider"] [data-testid="stMarkdownContainer"] {
+      color: #e0e5f5 !important;
+      opacity: 1 !important;
+    }
+    [data-testid="stAlert"] *,
+    [data-testid="stExpander"] *,
+    [data-testid="stChatMessage"] *,
+    [data-testid="stMetric"] * {
+      opacity: 1 !important;
+    }
+    [data-testid="stMetricLabel"], [data-testid="stMetricLabel"] *,
+    [data-testid="stMetricValue"], [data-testid="stMetricValue"] * {
+      color: #f4f6ff !important;
+    }
+    .nx-muted, .nx-login-note, .nx-stat-label {
+      color: #c2cbe0 !important;
+      opacity: 1 !important;
+    }
+    .nx-eyebrow { color: #75edf5 !important; }
+    .nx-pill { color: #8ff5fb !important; }
+    .nx-brand-name { color: #f7f8ff !important; }
+    .nx-brand-accent { color: #b5aaff !important; }
+    [data-testid="stSidebar"] .stButton > button,
+    [data-testid="stSidebar"] .stDownloadButton > button {
+      color: #111522 !important;
+    }
+
+    @media (max-width: 800px) {
+      .nx-login-wrap { grid-template-columns:1fr; margin-top:1rem; }
+      .nx-login-art { min-height:280px; }
+      .nx-orb-stage { height:150px; }
+      .nx-orb { width:120px; height:120px; border-radius:30px; }
+      .nx-orb:after { font-size:3rem; }
+      .nx-hero { padding:1.5rem; }
+      [data-testid="stMain"] .block-container { padding-top:1.2rem; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# -------------------------- Session state --------------------------
+
+DEFAULTS = {
+    "api_key": os.getenv("OPENAI_API_KEY", ""),
+    "vectorstore": None,
+    "file_sig": None,
+    "file_names": [],
+    "messages": [],
+    "indexed_chunks": 0,
+    "indexed_pages": 0,
+}
+for key, value in DEFAULTS.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+# -------------------------- API key gate ----------------------------
+# Use a reliable in-page gate instead of st.dialog so this works on
+# older Streamlit versions as well and never leaves a blank page.
+
+if not st.session_state.api_key:
+    art_col, login_col = st.columns([1.05, 0.95], gap="large")
+
+    with art_col:
+        st.markdown(
+            """
+            <section class="nx-login-art">
+              <div>
+                <div class="nx-brand" style="border:0;margin:0;padding:0">
+                  <span class="nx-mark">✦</span>
+                  <span class="nx-brand-name">NEXORA</span>
+                  <span class="nx-brand-accent">STUDIO</span>
+                </div>
+                <div class="nx-eyebrow" style="margin-top:2.2rem">Private AI workspace</div>
+                <h1 class="nx-title" style="font-size:2.5rem;margin-top:.7rem">Your knowledge.<br><span class="nx-gradient-text">One intelligent space.</span></h1>
+                <p class="nx-muted">Turn your documents into useful answers, with source passages you can verify.</p>
+              </div>
+              <div class="nx-orb-stage">
+                <div class="nx-orbit"></div><div class="nx-orbit two"></div><div class="nx-orb"></div>
+              </div>
+              <div class="nx-muted" style="font-size:.78rem">PDF · DOCX · CSV · JSON · TXT · MARKDOWN</div>
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with login_col:
+        with st.container(border=True):
+            st.markdown(
+                """
+                <div style="padding:.5rem 0 .8rem">
+                  <span class="nx-pill">✦ SECURE CONNECTION</span>
+                  <h2 class="nx-login-heading" style="margin-top:1.1rem">Welcome back.</h2>
+                  <p class="nx-login-note">Connect your OpenAI API key to unlock your document research studio.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            with st.form("first_api_key_form", border=False):
+                key_input = st.text_input(
+                    "OpenAI API key",
+                    type="password",
+                    placeholder="Paste your API key",
+                    help="Your key is used for this session and is not displayed.",
+                )
+                connect = st.form_submit_button("Connect workspace  →", use_container_width=True)
+            st.caption("🔒 Your key stays in this Streamlit session. Use trusted devices only.")
+            st.markdown(
+                '<p class="nx-muted" style="font-size:.78rem;margin-top:1.6rem">SUPPORTED FILES<br>PDF · DOCX · CSV · JSON · TXT · MD</p>',
+                unsafe_allow_html=True,
+            )
+
+    if connect:
+        if key_input.strip():
+            st.session_state.api_key = key_input.strip()
+            st.rerun()
+        else:
+            st.warning("Please enter your API key.")
+    st.stop()
+
+# ------------------------------- Sidebar ----------------------------
+
+with st.sidebar:
+    st.markdown(
+        '<div class="nx-brand"><span class="nx-mark">✦</span><span class="nx-brand-name">NEXORA</span><span class="nx-brand-accent">STUDIO</span></div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Your multi-file AI research workspace")
+
+    uploaded_files = st.file_uploader(
+        "Add documents",
+        type=["pdf", "txt", "md", "csv", "json", "docx"],
+        accept_multiple_files=True,
+        help="Supported: PDF, TXT, Markdown, CSV, JSON, DOCX",
+    )
+
+    st.divider()
+    st.markdown("#### Model & retrieval")
+    model_name = st.selectbox(
+        "Chat model",
+        ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
+        index=0,
+    )
+    chunk_size = st.slider("Chunk size", 500, 2000, 1000, step=100)
+    chunk_overlap = st.slider("Chunk overlap", 0, 400, 150, step=50)
+    top_k = st.slider("Retrieved passages", 2, 10, 4)
+
+    st.divider()
+    with st.expander("API key settings"):
+        replacement_key = st.text_input(
+            "Replace API key",
+            type="password",
+            placeholder="Enter new key",
+        )
+        if st.button("Update API key", use_container_width=True):
+            if replacement_key.strip():
+                st.session_state.api_key = replacement_key.strip()
+                st.success("API key updated for this session.")
+                st.rerun()
+            else:
+                st.warning("Enter a replacement key first.")
+
+        if st.button("Disconnect API key", use_container_width=True):
+            st.session_state.api_key = ""
+            st.session_state.vectorstore = None
+            st.session_state.file_sig = None
+            st.session_state.file_names = []
+            st.session_state.messages = []
+            st.rerun()
+
+    col1, col2 = st.columns(2)
+    if col1.button("Clear chat", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+    if col2.button("Reset files", use_container_width=True):
+        st.session_state.vectorstore = None
+        st.session_state.file_sig = None
+        st.session_state.file_names = []
+        st.session_state.messages = []
+        st.session_state.indexed_chunks = 0
+        st.session_state.indexed_pages = 0
+        st.rerun()
+
+
+# -------------------------- File readers ----------------------------
+
+def load_file(file_name: str, content: bytes) -> list[Document]:
+    """Read a supported file and return LangChain Documents."""
+    suffix = Path(file_name).suffix.lower()
+
+    if suffix == ".pdf":
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+            docs = PyPDFLoader(tmp_path).load()
+            for doc in docs:
+                doc.metadata["source"] = file_name
+            return docs
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    if suffix in {".txt", ".md"}:
+        text = content.decode("utf-8-sig", errors="replace")
+        return [Document(page_content=text, metadata={"source": file_name, "page": 0})] if text.strip() else []
+
+    if suffix == ".csv":
+        text = content.decode("utf-8-sig", errors="replace")
+        rows = list(csv.reader(io.StringIO(text)))
+        if not rows:
+            return []
+        header = " | ".join(rows[0])
+        docs = []
+        for row_num, row in enumerate(rows[1:], start=2):
+            row_text = " | ".join(row)
+            if row_text.strip():
+                docs.append(
+                    Document(
+                        page_content=f"CSV columns: {header}\nRow {row_num}: {row_text}",
+                        metadata={"source": file_name, "page": row_num - 1, "row": row_num},
+                    )
+                )
+        if not docs:
+            docs = [Document(page_content=f"CSV columns: {header}", metadata={"source": file_name, "page": 0})]
+        return docs
+
+    if suffix == ".json":
+        try:
+            parsed = json.loads(content.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"{file_name} is not valid JSON: {exc}") from exc
+
+        # Pretty-print the JSON to preserve key/value structure in chunks.
+        pretty_json = json.dumps(parsed, ensure_ascii=False, indent=2)
+        if not pretty_json.strip():
+            return []
+        return [
+            Document(
+                page_content=f"JSON file: {file_name}\n\n{pretty_json}",
+                metadata={"source": file_name, "page": 0},
+            )
+        ]
+
+    if suffix == ".docx":
+        try:
+            from docx import Document as DocxDocument
+        except ImportError as exc:
+            raise RuntimeError(
+                "DOCX support requires python-docx. Install it with: pip install python-docx"
+            ) from exc
+
+        docx = DocxDocument(io.BytesIO(content))
+        parts = [p.text.strip() for p in docx.paragraphs if p.text.strip()]
+        for table in docx.tables:
+            for row in table.rows:
+                values = [cell.text.strip() for cell in row.cells]
+                if any(values):
+                    parts.append(" | ".join(values))
+        full_text = "\n".join(parts)
+        return [Document(page_content=full_text, metadata={"source": file_name, "page": 0})] if full_text.strip() else []
+
+    raise ValueError(f"Unsupported file type: {suffix}")
+
+
+def build_vectorstore(files: list[Any], size: int, overlap: int, api_key: str):
+    if overlap >= size:
+        raise ValueError("Chunk overlap must be smaller than chunk size.")
+
+    all_docs: list[Document] = []
+    file_names: list[str] = []
+    total_pages = 0
+
+    for uploaded in files:
+        file_names.append(uploaded.name)
+        docs = load_file(uploaded.name, uploaded.getvalue())
+        docs = [d for d in docs if d.page_content and d.page_content.strip()]
+        if not docs:
+            st.warning(f"No readable text found in {uploaded.name}; skipped.")
+            continue
+        for doc in docs:
+            doc.metadata["source"] = uploaded.name
+        all_docs.extend(docs)
+        total_pages += len(docs)
+
+    if not all_docs:
+        raise ValueError(
+            "No readable text was found in the selected files. Scanned PDFs may need OCR first."
+        )
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=size,
+        chunk_overlap=overlap,
+        separators=["\n\n", "\n", " ", ""],
+    )
+    chunks = splitter.split_documents(all_docs)
+    if not chunks:
+        raise ValueError("No searchable chunks could be created.")
+
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        api_key=api_key,
+    )
+    return FAISS.from_documents(chunks, embeddings), len(chunks), total_pages, file_names
+
+
+def display_page(metadata: dict[str, Any]) -> str:
+    page = metadata.get("page")
+    if isinstance(page, int):
+        # PDF page metadata is zero-based. CSV row metadata is intentionally shown
+        # as a row reference below rather than pretending it is a PDF page.
+        if metadata.get("row") is not None:
+            return f"row {metadata['row']}"
+        return str(page + 1)
+    return str(page) if page is not None else "—"
+
+
+def format_docs(docs: list[Document]) -> str:
+    formatted = []
+    for doc in docs:
+        source = doc.metadata.get("source", "Unknown file")
+        location = display_page(doc.metadata)
+        formatted.append(f"[Source: {source} | Page/location: {location}]\n{doc.page_content}")
+    return "\n\n".join(formatted)
+
+
+# -------------------------- Index uploaded files --------------------
+
+if uploaded_files:
+    file_parts = []
+    for file in uploaded_files:
+        digest = hashlib.sha256(file.getvalue()).hexdigest()
+        file_parts.append(f"{file.name}:{digest}")
+    files_digest = hashlib.sha256("\n".join(sorted(file_parts)).encode("utf-8")).hexdigest()
+    signature = (files_digest, chunk_size, chunk_overlap)
+
+    if st.session_state.file_sig != signature:
+        st.session_state.vectorstore = None
+        st.session_state.file_sig = None
+        st.session_state.messages = []
+        try:
+            with st.spinner("Reading documents and building your search index..."):
+                vectorstore, chunk_count, page_count, file_names = build_vectorstore(
+                    uploaded_files,
+                    chunk_size,
+                    chunk_overlap,
+                    st.session_state.api_key,
+                )
+            st.session_state.vectorstore = vectorstore
+            st.session_state.file_sig = signature
+            st.session_state.file_names = file_names
+            st.session_state.indexed_chunks = chunk_count
+            st.session_state.indexed_pages = page_count
+            st.success(f"Indexed {len(file_names)} file(s).")
+        except Exception as exc:
+            st.error(f"Could not index files: {exc}")
+            st.stop()
+
+
+# ------------------------------ Main UI -----------------------------
+
+st.markdown(
+    """
+    <div class="nx-hero">
+      <div class="nx-eyebrow">Your private research workspace</div>
+      <h1 class="nx-title">Know more.<br><span class="nx-gradient-text">Search smarter.</span></h1>
+      <p class="nx-muted">Ask questions across your documents, inspect the source passages, and keep your research in one intelligent workspace.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.markdown(
+        f'<div class="nx-stat"><div class="nx-stat-label">Documents</div><div class="nx-stat-value">{len(st.session_state.file_names)}</div></div>',
+        unsafe_allow_html=True,
+    )
+with c2:
+    st.markdown(
+        f'<div class="nx-stat"><div class="nx-stat-label">Searchable chunks</div><div class="nx-stat-value">{st.session_state.indexed_chunks}</div></div>',
+        unsafe_allow_html=True,
+    )
+with c3:
+    st.markdown(
+        f'<div class="nx-stat"><div class="nx-stat-label">Retrieved per question</div><div class="nx-stat-value">{top_k}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+if st.session_state.file_names:
+    with st.expander("View indexed documents"):
+        for name in st.session_state.file_names:
+            st.markdown(f"📄 `{name}`")
+else:
+    st.info("Add one or more documents using the sidebar to start your knowledge base.")
+
+RAG_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a careful document research assistant. Answer factual questions "
+            "using only the supplied document context. Conversation history may help "
+            "resolve references, but it is not evidence. If the documents do not contain "
+            "the answer, say: \"I couldn't find that in the uploaded documents.\" "
+            "Cite supporting sources using file name and page/row when available, "
+            "for example (guide.pdf, p. 4). Never invent citations.\n\n"
+            "Document context:\n{context}",
+        ),
+        MessagesPlaceholder(variable_name="chat_history", optional=True),
+        ("human", "{question}"),
+    ]
+)
+
+if st.session_state.vectorstore is None:
+    st.stop()
+
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+        if msg["role"] == "assistant" and msg.get("sources"):
+            with st.expander("📚 Sources used"):
+                for source in msg["sources"]:
+                    st.markdown(f"**{source['file']} · {source['location']}**")
+                    st.text(source["text"])
+                    st.divider()
+
+question = st.chat_input("Ask anything about your uploaded files…")
+
+if question:
+    prior = list(st.session_state.messages)
+    chat_history = [
+        (m["role"], m["content"])
+        for m in prior[-10:]
+        if m["role"] in ("user", "assistant")
+    ]
+    st.session_state.messages.append({"role": "user", "content": question})
+    with st.chat_message("user"):
+        st.markdown(question)
+
+    try:
+        retriever = st.session_state.vectorstore.as_retriever(search_kwargs={"k": top_k})
+        with st.chat_message("assistant"):
+            with st.spinner("Searching your knowledge base..."):
+                docs = retriever.invoke(question)
+                llm = ChatOpenAI(
+                    model=model_name,
+                    temperature=0,
+                    api_key=st.session_state.api_key,
+                )
+                chain = RAG_PROMPT | llm | StrOutputParser()
+                answer = chain.invoke(
+                    {
+                        "context": format_docs(docs),
+                        "question": question,
+                        "chat_history": chat_history,
+                    }
+                )
+            st.markdown(answer)
+
+            sources = [
+                {
+                    "file": str(doc.metadata.get("source", "Unknown file")),
+                    "location": display_page(doc.metadata),
+                    "text": doc.page_content[:900],
+                }
+                for doc in docs
+            ]
+            with st.expander("📚 Sources used"):
+                for source in sources:
+                    st.markdown(f"**{source['file']} · {source['location']}**")
+                    st.text(source["text"])
+                    st.divider()
+
+        st.session_state.messages.append(
+            {"role": "assistant", "content": answer, "sources": sources}
+        )
+    except Exception as exc:
+        st.error(
+            "The question could not be answered. Check your API key, model access, "
+            f"and network connection. Details: {exc}"
+        )
+
+st.markdown(
+    '<p style="text-align:center;color:#7c879a;font-size:.76rem;padding:1.5rem 0">NEXORA KNOWLEDGE STUDIO · Verify important answers against the cited source passages.</p>',
+    unsafe_allow_html=True,
+)
