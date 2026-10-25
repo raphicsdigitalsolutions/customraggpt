@@ -762,13 +762,19 @@ if st.session_state.day_mode:
           color:#425a3f !important;-webkit-text-fill-color:#425a3f !important;
           background:rgba(140,170,103,.18) !important;
         }
-        [data-testid="stTextInput"] [data-baseweb="input"] {background:#fffef9 !important;border-color:rgba(67,94,69,.28) !important;}
-        [data-testid="stTextInput"] [data-baseweb="input"] button,
-        [data-testid="stTextInput"] [data-baseweb="input"] [role="button"] {
-          color:#425a3f !important;background:#fffef9 !important;border-color:transparent !important;box-shadow:none !important;
+        [data-testid="stTextInputRootElement"] {
+          background:#fffef9 !important;border:1px solid rgba(67,94,69,.28) !important;
         }
-        [data-testid="stTextInput"] [data-baseweb="input"] button svg,
-        [data-testid="stTextInput"] [data-baseweb="input"] [role="button"] svg {color:#425a3f !important;fill:currentColor !important;}
+        [data-testid="stTextInputRootElement"] input {
+          background:transparent !important;color:#243229 !important;-webkit-text-fill-color:#243229 !important;
+        }
+        [data-testid="stTextInputRootElement"] button {
+          color:#425a3f !important;background:transparent !important;border-color:transparent !important;box-shadow:none !important;
+        }
+        [data-testid="stTextInputRootElement"] button *,
+        [data-testid="stTextInputRootElement"] [data-testid="stIconMaterial"] {
+          color:#425a3f !important;-webkit-text-fill-color:#425a3f !important;fill:currentColor !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
