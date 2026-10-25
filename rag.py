@@ -309,6 +309,106 @@ st.markdown(
       color: #111522 !important;
     }
 
+    /* Animated premium dashboard stage */
+    .nx-main-hero {
+      display:grid; grid-template-columns:minmax(0,1.25fr) minmax(250px,.75fr);
+      gap:1.25rem; align-items:center; min-height:290px;
+      padding:2.15rem 2.35rem; isolation:isolate;
+    }
+    .nx-main-hero:before {
+      content:""; position:absolute; inset:-45%; z-index:-1; pointer-events:none;
+      background:conic-gradient(from 0deg, transparent 0 35%,rgba(127,113,255,.13) 44%,rgba(92,230,242,.10) 50%,transparent 62% 100%);
+      animation:nx-aurora-turn 22s linear infinite;
+    }
+    .nx-main-hero:after {
+      content:""; position:absolute; inset:0; pointer-events:none; opacity:.28; z-index:-1;
+      background-image:radial-gradient(rgba(208,216,255,.28) .7px,transparent .7px);
+      background-size:23px 23px; mask-image:linear-gradient(90deg,transparent 20%,#000 100%);
+    }
+    .nx-hero-copy {position:relative; z-index:2;}
+    .nx-hero-title {
+      color:#f6f7ff; font-weight:850; font-size:clamp(2.2rem,3.5vw,3.45rem);
+      letter-spacing:-.065em; line-height:1.02; margin:.9rem 0 1rem;
+    }
+    .nx-hero-description {max-width:610px; color:#c7cde0; line-height:1.75; font-size:.98rem;}
+    .nx-hero-badges {display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.35rem;}
+    .nx-hero-badge {
+      font-size:.72rem; font-weight:700; letter-spacing:.025em; color:#dce2f5;
+      padding:.43rem .72rem; border-radius:999px; background:rgba(255,255,255,.045);
+      border:1px solid rgba(198,207,255,.15); box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .nx-live-dot {display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.45rem;
+      background:#65e8c1;box-shadow:0 0 0 4px rgba(101,232,193,.10),0 0 14px rgba(101,232,193,.8);
+      animation:nx-live-pulse 2s ease-in-out infinite;vertical-align:middle;}
+    .nx-hero-stage {
+      position:relative; min-height:235px; display:flex; align-items:center; justify-content:center;
+      perspective:1000px; isolation:isolate;
+    }
+    .nx-hero-aura {
+      position:absolute;width:225px;height:225px;border-radius:50%;
+      background:radial-gradient(circle,rgba(135,115,255,.31),rgba(70,213,236,.10) 43%,transparent 70%);
+      filter:blur(9px); animation:nx-aura-breathe 5.5s ease-in-out infinite;
+    }
+    .nx-hero-ring {
+      position:absolute;width:240px;height:100px;border:1px solid rgba(104,225,242,.63);
+      border-radius:50%;transform:rotate(-27deg);box-shadow:0 0 26px rgba(91,210,239,.10),inset 0 0 16px rgba(91,210,239,.06);
+      animation:nx-ring-float 7s ease-in-out infinite;
+    }
+    .nx-hero-ring.ring-2 {width:265px;height:120px;border-color:rgba(173,156,255,.6);transform:rotate(52deg);animation-delay:-2.2s;}
+    .nx-hero-ring.ring-3 {width:200px;height:190px;border-color:rgba(255,255,255,.16);transform:rotate(-60deg);animation-delay:-4s;}
+    .nx-hero-crystal {
+      position:relative;width:126px;height:126px;border-radius:32px;z-index:2;
+      transform-style:preserve-3d;transform:rotateX(24deg) rotateY(-27deg) rotateZ(-12deg);
+      background:
+        radial-gradient(circle at 27% 17%,rgba(255,255,255,.95),transparent 8%),
+        linear-gradient(145deg,#d5ceff 0%,#9384ff 22%,#5d56b7 48%,#242c4a 75%,#111726 100%);
+      box-shadow:inset 9px 9px 22px rgba(255,255,255,.35),inset -20px -21px 32px rgba(0,0,0,.55),
+        0 25px 38px rgba(0,0,0,.36),0 0 55px rgba(131,112,255,.3);
+      animation:nx-crystal-hover 6.8s ease-in-out infinite,nx-crystal-turn 18s linear infinite;
+    }
+    .nx-hero-crystal:before {
+      content:"";position:absolute;inset:13px;border-radius:23px;border:1px solid rgba(255,255,255,.38);
+      box-shadow:inset 0 0 20px rgba(255,255,255,.12);transform:translateZ(11px);
+    }
+    .nx-hero-crystal:after {
+      content:"✦";position:absolute;inset:0;display:grid;place-items:center;color:#fff;
+      font-size:3.25rem;text-shadow:0 0 25px rgba(255,255,255,.75);transform:translateZ(22px);
+    }
+    .nx-particle {position:absolute;width:6px;height:6px;border-radius:50%;background:#a9fbff;
+      box-shadow:0 0 15px #65e8f2;animation:nx-particle-drift 6s ease-in-out infinite;}
+    .nx-particle.p-1 {top:18%;left:18%;animation-delay:-1s;}
+    .nx-particle.p-2 {top:25%;right:13%;width:4px;height:4px;animation-delay:-3s;background:#b7aaff;}
+    .nx-particle.p-3 {bottom:17%;left:27%;width:5px;height:5px;animation-delay:-4s;background:#b7aaff;}
+    .nx-particle.p-4 {bottom:19%;right:18%;animation-delay:-2s;}
+    .nx-stage-label {
+      position:absolute;bottom:-.15rem;left:50%;transform:translateX(-50%);white-space:nowrap;
+      color:#bfc8e1;font-size:.64rem;font-weight:800;letter-spacing:.11em;
+      padding:.42rem .68rem;border-radius:999px;border:1px solid rgba(187,199,255,.16);
+      background:rgba(12,16,26,.70);box-shadow:0 8px 22px rgba(0,0,0,.18);backdrop-filter:blur(12px);
+    }
+    .nx-stat {transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;position:relative;overflow:hidden;}
+    .nx-stat:before {content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,#a99bff,#65e8f2);opacity:.7;}
+    .nx-stat:hover {transform:translateY(-4px);border-color:rgba(155,140,255,.38);box-shadow:0 18px 38px rgba(0,0,0,.19),0 0 30px rgba(116,101,255,.06);}
+    .nx-stat-value {color:#f8f8ff;text-shadow:0 0 22px rgba(160,145,255,.12);}
+    .nx-empty-state {
+      display:flex;gap:1rem;align-items:center;padding:1.25rem 1.4rem;margin:1.2rem 0;
+      border:1px solid rgba(155,140,255,.23);border-radius:18px;
+      background:linear-gradient(120deg,rgba(155,140,255,.09),rgba(101,232,242,.035));
+    }
+    .nx-empty-icon {flex:0 0 50px;width:50px;height:50px;border-radius:16px;display:grid;place-items:center;
+      background:linear-gradient(140deg,#b5aaff,#65dce9);color:#10131b;font-size:1.5rem;
+      box-shadow:0 9px 24px rgba(134,117,255,.22);}
+    @keyframes nx-aurora-turn {to{transform:rotate(360deg)}}
+    @keyframes nx-live-pulse {0%,100%{opacity:1;box-shadow:0 0 0 4px rgba(101,232,193,.1),0 0 14px rgba(101,232,193,.7)}50%{opacity:.58;box-shadow:0 0 0 7px rgba(101,232,193,.025),0 0 5px rgba(101,232,193,.25)}}
+    @keyframes nx-aura-breathe {0%,100%{transform:scale(.92);opacity:.65}50%{transform:scale(1.12);opacity:1}}
+    @keyframes nx-ring-float {0%,100%{translate:0 0;opacity:.65}50%{translate:0 -9px;opacity:1}}
+    @keyframes nx-crystal-hover {0%,100%{translate:0 0}50%{translate:0 -12px}}
+    @keyframes nx-crystal-turn {0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(9deg)}}
+    @keyframes nx-particle-drift {0%,100%{transform:translate3d(0,0,0);opacity:.45}50%{transform:translate3d(9px,-17px,15px);opacity:1}}
+    @media (prefers-reduced-motion: reduce) {
+      *, *:before, *:after {animation-duration:.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;transition-duration:.01ms !important;}
+    }
+
     @media (max-width: 800px) {
       .nx-login-wrap { grid-template-columns:1fr; margin-top:1rem; }
       .nx-login-art { min-height:280px; }
@@ -316,6 +416,10 @@ st.markdown(
       .nx-orb { width:120px; height:120px; border-radius:30px; }
       .nx-orb:after { font-size:3rem; }
       .nx-hero { padding:1.5rem; }
+      .nx-main-hero { grid-template-columns:1fr; gap:.2rem; }
+      .nx-hero-stage { min-height:205px; }
+      .nx-hero-title { font-size:2.35rem; }
+      .nx-stage-label { bottom:.1rem; font-size:.58rem; }
       [data-testid="stMain"] .block-container { padding-top:1.2rem; }
     }
     </style>
@@ -613,6 +717,15 @@ def format_docs(docs: list[Document]) -> str:
 
 # -------------------------- Index uploaded files --------------------
 
+# If the user removes all uploads from the widget, clear the old knowledge base too.
+if not uploaded_files and st.session_state.file_names:
+    st.session_state.vectorstore = None
+    st.session_state.file_sig = None
+    st.session_state.file_names = []
+    st.session_state.messages = []
+    st.session_state.indexed_chunks = 0
+    st.session_state.indexed_pages = 0
+
 if uploaded_files:
     file_parts = []
     for file in uploaded_files:
@@ -648,11 +761,26 @@ if uploaded_files:
 
 st.markdown(
     """
-    <div class="nx-hero">
-      <div class="nx-eyebrow">Your private research workspace</div>
-      <h1 class="nx-title">Know more.<br><span class="nx-gradient-text">Search smarter.</span></h1>
-      <p class="nx-muted">Ask questions across your documents, inspect the source passages, and keep your research in one intelligent workspace.</p>
-    </div>
+    <section class="nx-hero nx-main-hero">
+      <div class="nx-hero-copy">
+        <div class="nx-eyebrow"><span class="nx-live-dot"></span>Knowledge engine online</div>
+        <h1 class="nx-hero-title">Know more.<br><span class="nx-gradient-text">Search smarter.</span></h1>
+        <p class="nx-hero-description">Your documents, transformed into an intelligent knowledge space. Ask precise questions, explore source passages, and stay in control of every answer.</p>
+        <div class="nx-hero-badges">
+          <span class="nx-hero-badge">✦ Multi-file RAG</span>
+          <span class="nx-hero-badge">⌁ Source-grounded answers</span>
+          <span class="nx-hero-badge">◈ Live retrieval</span>
+        </div>
+      </div>
+      <div class="nx-hero-stage" aria-label="Animated NEXORA knowledge crystal">
+        <div class="nx-hero-aura"></div>
+        <div class="nx-hero-ring ring-1"></div><div class="nx-hero-ring ring-2"></div><div class="nx-hero-ring ring-3"></div>
+        <div class="nx-hero-crystal"></div>
+        <span class="nx-particle p-1"></span><span class="nx-particle p-2"></span>
+        <span class="nx-particle p-3"></span><span class="nx-particle p-4"></span>
+        <div class="nx-stage-label">LIVE VECTOR SEARCH · AI ASSISTED</div>
+      </div>
+    </section>
     """,
     unsafe_allow_html=True,
 )
@@ -679,7 +807,18 @@ if st.session_state.file_names:
         for name in st.session_state.file_names:
             st.markdown(f"📄 `{name}`")
 else:
-    st.info("Add one or more documents using the sidebar to start your knowledge base.")
+    st.markdown(
+        """
+        <div class="nx-empty-state">
+          <div class="nx-empty-icon">↥</div>
+          <div>
+            <div style="font-weight:800;color:#f4f6ff;font-size:1.02rem">Your knowledge base is ready for its first document</div>
+            <div class="nx-muted" style="margin-top:.25rem">Use the sidebar upload to add PDF, DOCX, CSV, JSON, TXT, or Markdown files. They will be indexed together for cross-document answers.</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 RAG_PROMPT = ChatPromptTemplate.from_messages(
     [
