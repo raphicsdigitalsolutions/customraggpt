@@ -745,6 +745,30 @@ if st.session_state.day_mode:
         [data-testid="stAlert"] *, [data-testid="stExpander"] * {color:#26352b;}
         .nx-file-card-inner:before {background:linear-gradient(90deg,transparent,rgba(105,145,85,.16),transparent);}
         .nx-top-ring {border-color:rgba(97,137,87,.6) !important;}.nx-top-ring.ring-b {border-color:rgba(102,160,128,.65) !important;}
+        /* Keep intentionally styled dashboard spans above the broad day-mode text rule. */
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] span.nx-float-chip {
+          color:#26352b !important;-webkit-text-fill-color:#26352b !important;
+          background:linear-gradient(145deg,#fffef9,#e7efdf) !important;
+          border-color:rgba(73,99,72,.28) !important;
+          box-shadow:0 8px 20px rgba(55,76,52,.15),inset 0 1px 0 #fff !important;
+        }
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] span.nx-file-name {
+          color:#24352a !important;-webkit-text-fill-color:#24352a !important;
+        }
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] span.nx-file-meta {
+          color:#536456 !important;-webkit-text-fill-color:#536456 !important;
+        }
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] span.nx-file-type {
+          color:#425a3f !important;-webkit-text-fill-color:#425a3f !important;
+          background:rgba(140,170,103,.18) !important;
+        }
+        [data-testid="stTextInput"] [data-baseweb="input"] {background:#fffef9 !important;border-color:rgba(67,94,69,.28) !important;}
+        [data-testid="stTextInput"] [data-baseweb="input"] button,
+        [data-testid="stTextInput"] [data-baseweb="input"] [role="button"] {
+          color:#425a3f !important;background:#fffef9 !important;border-color:transparent !important;box-shadow:none !important;
+        }
+        [data-testid="stTextInput"] [data-baseweb="input"] button svg,
+        [data-testid="stTextInput"] [data-baseweb="input"] [role="button"] svg {color:#425a3f !important;fill:currentColor !important;}
         </style>
         """,
         unsafe_allow_html=True,
