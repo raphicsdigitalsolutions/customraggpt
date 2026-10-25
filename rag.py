@@ -1,4 +1,5 @@
 import hashlib
+import html
 
 import streamlit as st
 from langchain_core.output_parsers import StrOutputParser
@@ -17,6 +18,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# The theme is scoped to each visitor's Streamlit session.
+if "day_mode" not in st.session_state:
+    st.session_state.day_mode = False
+
+STAR_ICON = """<svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 1.5c2.3 10.4 8.1 16.2 18.5 18.5C28.1 22.3 22.3 28.1 20 38.5 17.7 28.1 11.9 22.3 1.5 20 11.9 17.7 17.7 11.9 20 1.5Z" fill="currentColor"/></svg>"""
+BRAND_MARK = f'<span class="nx-mark" aria-hidden="true">{STAR_ICON}</span>'
 
 # CSS is intentionally conservative so it doesn't hide Streamlit
 # controls or cause unreadable text in different Streamlit themes.
@@ -615,6 +623,133 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Additional interactions layer above the original visual system. Keeping it
+# separate makes the light theme and motion states easy to reason about.
+st.markdown(
+    """
+    <style>
+    .nx-mark svg {display:block;width:20px;height:20px;overflow:visible;}
+    .nx-mark {color:#fbffe9 !important;}
+    .nx-topbar-label {display:flex;align-items:center;gap:.7rem;font-size:.82rem;font-weight:800;letter-spacing:.08em;color:#e7efd9;}
+    .nx-topbar-label small {display:block;margin-top:.15rem;color:#9eab9f;font-size:.66rem;font-weight:600;letter-spacing:.05em;}
+    .nx-top-orbit {position:relative;width:58px;height:58px;margin-left:auto;perspective:500px;isolation:isolate;}
+    .nx-top-orbit:before {content:"";position:absolute;inset:10px;border-radius:50%;background:radial-gradient(circle,rgba(203,229,139,.22),transparent 70%);filter:blur(4px);animation:nx-top-aura 4.8s ease-in-out infinite;}
+    .nx-top-ring {position:absolute;inset:12px 2px;border:1px solid rgba(203,229,139,.5);border-radius:50%;transform:rotate(-30deg);animation:nx-top-spin 8s linear infinite;}
+    .nx-top-ring.ring-b {inset:4px 16px;border-color:rgba(141,212,174,.55);transform:rotate(54deg);animation-duration:6s;animation-direction:reverse;}
+    .nx-top-core {position:absolute;left:17px;top:17px;width:25px;height:25px;display:grid;place-items:center;border:1px solid rgba(239,246,218,.4);border-radius:9px;background:linear-gradient(145deg,#5e805e,#263d31);color:#f8ffe9;box-shadow:inset 1px 1px 4px rgba(255,255,255,.35),0 6px 16px rgba(112,156,105,.28);transform:rotateX(22deg) rotateY(-24deg) rotateZ(-12deg);transform-style:preserve-3d;animation:nx-top-float 4.5s ease-in-out infinite;}
+    .nx-top-core svg {width:15px;height:15px;filter:drop-shadow(0 0 4px rgba(255,255,255,.75));}
+    .nx-hero-stage {min-height:270px;overflow:visible;}
+    .nx-hero-crystal {width:142px;height:142px;border-radius:35px;transform-style:preserve-3d;}
+    .nx-hero-crystal:after {content:none !important;}
+    .nx-crystal-mark {position:absolute;inset:0;display:grid;place-items:center;transform:translateZ(24px);}
+    .nx-crystal-mark:before {content:"";position:absolute;width:70px;height:70px;border-radius:23px;border:1px solid rgba(239,246,218,.4);background:linear-gradient(145deg,rgba(17,31,23,.88),rgba(37,62,47,.74));box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 8px 20px rgba(9,19,12,.35);}
+    .nx-crystal-mark svg {position:relative;width:37px;height:37px;color:#fbffe8;filter:drop-shadow(0 0 9px rgba(245,255,206,.78));animation:nx-star-breathe 3.6s ease-in-out infinite;}
+    .nx-float-chip {position:absolute;z-index:3;padding:.48rem .62rem;border:1px solid rgba(231,242,216,.24);border-radius:10px;background:linear-gradient(145deg,rgba(35,54,42,.86),rgba(18,31,24,.76));color:#eff6df;font-size:.6rem;font-weight:850;letter-spacing:.13em;box-shadow:0 8px 20px rgba(7,16,10,.22),inset 0 1px 0 rgba(255,255,255,.12);transform-style:preserve-3d;animation:nx-chip-float 5.2s ease-in-out infinite;}
+    .nx-float-chip.chip-a {top:17%;left:5%;transform:rotateY(18deg) rotateZ(-8deg);}
+    .nx-float-chip.chip-b {top:26%;right:3%;animation-delay:-2s;transform:rotateY(-18deg) rotateZ(7deg);}
+    .nx-float-chip.chip-c {bottom:19%;left:14%;animation-delay:-3.4s;transform:rotateX(16deg) rotateZ(5deg);}
+    .nx-file-shelf {margin:1.6rem 0 1.25rem;}
+    .nx-file-shelf-head {display:flex;justify-content:space-between;align-items:end;gap:1rem;margin:0 0 .9rem;}
+    .nx-file-shelf-title {margin:.25rem 0 0;font-size:1.25rem;font-weight:800;letter-spacing:-.035em;color:#f3f2e9;}
+    .nx-file-count {padding:.38rem .62rem;border:1px solid rgba(205,224,207,.16);border-radius:10px;background:rgba(225,237,218,.05);color:#cfdbca;font-size:.72rem;font-weight:750;}
+    .nx-file-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;perspective:1200px;}
+    .nx-file-card {min-width:0;perspective:900px;transform-style:preserve-3d;animation:nx-card-enter .65s cubic-bezier(.22,.78,.24,1) both;animation-delay:calc(var(--card-index,0) * 65ms);}
+    .nx-file-card-inner {position:relative;min-height:122px;overflow:hidden;padding:1rem;border:1px solid rgba(205,224,207,.14);border-radius:18px;background:linear-gradient(145deg,rgba(33,47,38,.88),rgba(17,27,22,.94));box-shadow:0 10px 26px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.055);transform-style:preserve-3d;transition:transform .42s cubic-bezier(.2,.8,.2,1),border-color .3s ease,box-shadow .3s ease;}
+    .nx-file-card-inner:before {content:"";position:absolute;inset:-50% auto -50% -70%;width:42%;background:linear-gradient(90deg,transparent,rgba(235,247,214,.12),transparent);transform:skewX(-20deg);animation:nx-file-sheen 8s ease-in-out infinite;animation-delay:calc(var(--card-index,0) * -450ms);pointer-events:none;}
+    .nx-file-card:hover .nx-file-card-inner,.nx-file-card:focus-within .nx-file-card-inner {transform:rotateX(5deg) rotateY(-5deg) translateZ(10px);border-color:rgba(203,229,139,.46);box-shadow:0 22px 38px rgba(0,0,0,.22),0 0 24px rgba(155,190,115,.1),inset 0 1px 0 rgba(255,255,255,.11);}
+    .nx-file-card-top {display:flex;justify-content:space-between;align-items:center;gap:.6rem;transform:translateZ(14px);}
+    .nx-file-glyph {width:33px;height:38px;display:grid;place-items:center;border:1px solid rgba(203,229,139,.22);border-radius:10px;background:linear-gradient(145deg,rgba(203,229,139,.16),rgba(141,212,174,.08));color:#d9eca8;}
+    .nx-file-glyph svg {width:19px;height:22px;}
+    .nx-file-type {padding:.3rem .45rem;border-radius:7px;background:rgba(203,229,139,.10);color:#d8e9b1;font-size:.61rem;font-weight:850;letter-spacing:.12em;}
+    .nx-file-name {position:relative;z-index:1;display:block;margin:.8rem 0 0;overflow-wrap:anywhere;color:#f2f4e9;font-size:.9rem;font-weight:700;line-height:1.4;transform:translateZ(18px);}
+    .nx-file-meta {display:block;margin-top:.27rem;color:#aeb9ac;font-size:.68rem;letter-spacing:.045em;text-transform:uppercase;transform:translateZ(10px);}
+    @keyframes nx-top-spin {to{transform:rotate(330deg)}}
+    @keyframes nx-top-float {0%,100%{translate:0 1px;rotate:0deg}50%{translate:0 -5px;rotate:5deg}}
+    @keyframes nx-top-aura {0%,100%{opacity:.42;scale:.86}50%{opacity:.95;scale:1.12}}
+    @keyframes nx-chip-float {0%,100%{translate:0 0}50%{translate:0 -8px}}
+    @keyframes nx-star-breathe {0%,100%{scale:.92;opacity:.88}50%{scale:1.08;opacity:1}}
+    @keyframes nx-card-enter {from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
+    @keyframes nx-file-sheen {0%,74%,100%{opacity:0;translate:0 0}80%{opacity:.7}94%{opacity:0;translate:270% 0}}
+    @media (max-width: 900px) {.nx-file-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media (max-width: 600px) {
+      .nx-topbar-label {font-size:.7rem;}
+      .nx-top-orbit {width:48px;height:48px;}
+      .nx-top-core {left:14px;top:14px;width:22px;height:22px;}
+      .nx-file-grid {grid-template-columns:1fr;}
+      .nx-file-shelf-head {align-items:start;}
+      .nx-hero-stage {min-height:220px;}
+      .nx-hero-crystal {width:118px;height:118px;border-radius:30px;}
+      .nx-crystal-mark:before {width:60px;height:60px;border-radius:19px;}
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nx-top-orbit *, .nx-top-orbit:before, .nx-hero-stage *, .nx-file-card, .nx-file-card-inner:before {
+        animation-duration:.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important;transition-duration:.01ms !important;
+      }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+if st.session_state.day_mode:
+    st.markdown(
+        """
+        <style>
+        html, body, [data-testid="stAppViewContainer"], .stApp {background:#f3f5ed !important;color:#243229 !important;color-scheme:light;}
+        [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {background:rgba(243,245,237,.95) !important;color:#243229 !important;}
+        [data-testid="stSidebar"] {background:linear-gradient(160deg,#e8eddf,#f5f6ef) !important;border-right-color:rgba(59,79,61,.16) !important;}
+        [data-testid="stSidebar"] *, [data-testid="stMain"] h1, [data-testid="stMain"] h2, [data-testid="stMain"] h3,
+        [data-testid="stMain"] label, [data-testid="stMain"] [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] span:not(.nx-gradient-text),
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span:not(.nx-brand-accent):not(.nx-mark) {color:#26352b !important;-webkit-text-fill-color:#26352b !important;}
+        [data-testid="stCaptionContainer"], [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {color:#536456 !important;}
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"], [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {color:#536456 !important;-webkit-text-fill-color:#536456 !important;}
+        .nx-topbar-label, .nx-brand-name, .nx-login-heading, .nx-title {color:#26352b !important;}
+        [data-testid="stSidebar"] .nx-brand-name {color:#26352b !important;-webkit-text-fill-color:#26352b !important;}
+        .nx-topbar-label small {color:#627164 !important;}
+        .nx-eyebrow {color:#4e7048 !important;}.nx-pill {color:#47623e !important;background:rgba(185,214,136,.2) !important;}
+        .nx-file-shelf-title {color:#25342a !important;}.nx-file-count {color:#465747 !important;background:#fbfcf6 !important;border-color:rgba(67,94,69,.18) !important;}
+        .nx-hero {border-color:rgba(73,99,72,.19) !important;background:radial-gradient(ellipse at 82% 12%,rgba(141,176,112,.18),transparent 35%),radial-gradient(ellipse at 18% 110%,rgba(203,229,139,.25),transparent 45%),linear-gradient(135deg,#f8faef,#e9efdf 64%,#f2f5e9) !important;box-shadow:0 26px 68px rgba(55,76,52,.13),inset 0 1px 0 rgba(255,255,255,.85) !important;}
+        .nx-main-hero:before {background:conic-gradient(from 0deg,transparent 0 35%,rgba(136,169,94,.15) 44%,rgba(108,165,127,.12) 50%,transparent 62% 100%) !important;}
+        .nx-main-hero:after {background-image:radial-gradient(rgba(85,111,79,.20) .7px,transparent .7px) !important;}
+        .nx-hero-title {color:#24352a !important;}.nx-hero-description {color:#4a5b4c !important;}
+        .nx-gradient-text, .nx-brand-accent {background:linear-gradient(100deg,#526e4c,#6f8c56 58%,#598f76) !important;background-clip:text !important;-webkit-background-clip:text !important;color:transparent !important;}
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] .nx-gradient-text,
+        [data-testid="stMain"] [data-testid="stMarkdownContainer"] .nx-brand-accent,
+        [data-testid="stSidebar"] .nx-brand-accent {color:transparent !important;-webkit-text-fill-color:transparent !important;}
+        .nx-hero-badge {color:#354a39 !important;background:rgba(255,255,255,.58) !important;border-color:rgba(83,110,79,.18) !important;}
+        .nx-hero-ring {border-color:rgba(82,126,89,.6) !important;box-shadow:0 0 24px rgba(93,142,92,.12),inset 0 0 14px rgba(93,142,92,.08) !important;}
+        .nx-hero-ring.ring-2 {border-color:rgba(161,184,105,.68) !important;}.nx-hero-ring.ring-3 {border-color:rgba(68,87,64,.23) !important;}
+        .nx-hero-aura {background:radial-gradient(circle,rgba(198,219,143,.55),rgba(135,190,151,.18) 44%,transparent 72%) !important;}
+        .nx-hero-crystal {background:radial-gradient(circle at 27% 17%,rgba(255,255,255,.98),transparent 8%),linear-gradient(145deg,#e5edbb 0%,#b8d28e 24%,#708f6c 50%,#375844 76%,#1a2a20 100%) !important;box-shadow:inset 9px 9px 22px rgba(255,255,255,.55),inset -18px -18px 30px rgba(16,34,22,.52),0 22px 38px rgba(63,91,59,.24),0 0 54px rgba(122,160,103,.3) !important;}
+        .nx-stage-label {color:#405543 !important;background:rgba(250,252,243,.9) !important;border-color:rgba(73,99,72,.2) !important;}
+        .nx-stat {background:linear-gradient(145deg,#fffef8,#edf2e5) !important;border-color:rgba(68,93,67,.17) !important;box-shadow:0 12px 28px rgba(55,76,52,.09),inset 0 1px 0 #fff !important;}
+        .nx-stat-label {color:#556555 !important;}.nx-stat-value {color:#24352a !important;text-shadow:0 0 18px rgba(135,164,98,.12) !important;}
+        .nx-empty-state {background:linear-gradient(120deg,rgba(203,229,139,.2),rgba(141,212,174,.1)) !important;border-color:rgba(86,121,72,.21) !important;}
+        .nx-empty-state .nx-empty-title {color:#26352b !important;}.nx-empty-state .nx-muted {color:#536456 !important;}
+        .nx-file-card-inner {background:linear-gradient(145deg,#fffef9,#edf2e5) !important;border-color:rgba(70,96,68,.18) !important;box-shadow:0 12px 28px rgba(54,75,52,.10),inset 0 1px 0 #fff !important;}
+        .nx-file-name {color:#26352b !important;}.nx-file-meta {color:#617062 !important;}.nx-file-type {color:#425a3f !important;background:rgba(140,170,103,.16) !important;}.nx-file-glyph {color:#526e4c !important;border-color:rgba(88,117,74,.2) !important;background:linear-gradient(145deg,rgba(203,229,139,.30),rgba(141,212,174,.15)) !important;}
+        .nx-login-art {background:radial-gradient(ellipse at 25% 20%,rgba(141,212,174,.25),transparent 36%),radial-gradient(ellipse at 78% 78%,rgba(203,229,139,.28),transparent 40%),linear-gradient(145deg,#f2f5e9,#e4ecdf 70%,#f7f7ee) !important;border-color:rgba(73,99,72,.2) !important;}
+        .nx-login-heading {color:#26352b !important;}.nx-login-note,.nx-muted,.nx-stat-label {color:#536456 !important;}
+        [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stNumberInput"] input,
+        [data-testid="stSelectbox"] [data-baseweb="select"] > div, [data-baseweb="select"] > div {background:#fffef9 !important;background-color:#fffef9 !important;color:#243229 !important;-webkit-text-fill-color:#243229 !important;border-color:rgba(67,94,69,.28) !important;}
+        [role="combobox"] {background:#fffef9 !important;background-color:#fffef9 !important;color:#243229 !important;-webkit-text-fill-color:#243229 !important;}
+        [data-testid="stTextInput"] input::placeholder, [data-testid="stTextArea"] textarea::placeholder {color:#788879 !important;-webkit-text-fill-color:#788879 !important;}
+        [data-testid="stFileUploader"] section {background:linear-gradient(145deg,rgba(203,229,139,.2),rgba(141,212,174,.1)) !important;border-color:rgba(83,112,74,.5) !important;}
+        [data-testid="stFileUploader"] section *, [data-testid="stFileUploader"] section button {color:#26352b !important;-webkit-text-fill-color:#26352b !important;}
+        .stButton > button, .stDownloadButton > button, [data-testid="stFormSubmitButton"] button {color:#16251b !important;-webkit-text-fill-color:#16251b !important;background:linear-gradient(115deg,#d9ebad,#9bcaa8) !important;}
+        [data-baseweb="popover"], [role="listbox"] {background:#fffef9 !important;border-color:rgba(67,94,69,.25) !important;}
+        [data-baseweb="popover"] *, [role="listbox"] *, [role="option"] {color:#243229 !important;}
+        [role="option"]:hover, [aria-selected="true"] {background:#e7efdc !important;}
+        div[data-testid="stChatMessage"] {background:linear-gradient(145deg,#fffefb,#eef2e8) !important;border-color:rgba(67,94,69,.18) !important;}
+        [data-testid="stAlert"] *, [data-testid="stExpander"] * {color:#26352b;}
+        .nx-file-card-inner:before {background:linear-gradient(90deg,transparent,rgba(105,145,85,.16),transparent);}
+        .nx-top-ring {border-color:rgba(97,137,87,.6) !important;}.nx-top-ring.ring-b {border-color:rgba(102,160,128,.65) !important;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 # -------------------------- Session state --------------------------
 
@@ -633,6 +768,20 @@ for key, value in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
+topbar_brand, topbar_theme, topbar_art = st.columns([5.6, 1.25, 0.65])
+with topbar_brand:
+    st.markdown(
+        f'<div class="nx-topbar-label">{BRAND_MARK}<span>NEXORA<small>KNOWLEDGE STUDIO</small></span></div>',
+        unsafe_allow_html=True,
+    )
+with topbar_theme:
+    st.toggle("Day mode", key="day_mode", help="Switch between the light and night color themes.")
+with topbar_art:
+    st.markdown(
+        f'<div class="nx-top-orbit" aria-hidden="true"><span class="nx-top-ring"></span><span class="nx-top-ring ring-b"></span><span class="nx-top-core">{STAR_ICON}</span></div>',
+        unsafe_allow_html=True,
+    )
+
 
 # -------------------------- API key gate ----------------------------
 # Use a reliable in-page gate instead of st.dialog so this works on
@@ -643,11 +792,11 @@ if not st.session_state.api_key:
 
     with art_col:
         st.markdown(
-            """
+            f"""
             <section class="nx-login-art">
               <div>
                 <div class="nx-brand" style="border:0;margin:0;padding:0">
-                  <span class="nx-mark">✦</span>
+                  {BRAND_MARK}
                   <span class="nx-brand-name">NEXORA</span>
                   <span class="nx-brand-accent">STUDIO</span>
                 </div>
@@ -705,7 +854,7 @@ if not st.session_state.api_key:
 
 with st.sidebar:
     st.markdown(
-        '<div class="nx-brand"><span class="nx-mark">✦</span><span class="nx-brand-name">NEXORA</span><span class="nx-brand-accent">STUDIO</span></div>',
+        f'<div class="nx-brand">{BRAND_MARK}<span class="nx-brand-name">NEXORA</span><span class="nx-brand-accent">STUDIO</span></div>',
         unsafe_allow_html=True,
     )
     st.caption("Your multi-file AI research workspace")
@@ -811,7 +960,7 @@ if uploaded_files:
 # ------------------------------ Main UI -----------------------------
 
 st.markdown(
-    """
+    f"""
     <section class="nx-hero nx-main-hero">
       <div class="nx-hero-copy">
         <div class="nx-eyebrow"><span class="nx-live-dot"></span>Knowledge engine online</div>
@@ -826,7 +975,8 @@ st.markdown(
       <div class="nx-hero-stage" aria-hidden="true">
         <div class="nx-hero-aura"></div>
         <div class="nx-hero-ring ring-1"></div><div class="nx-hero-ring ring-2"></div><div class="nx-hero-ring ring-3"></div>
-        <div class="nx-hero-crystal"></div>
+        <div class="nx-hero-crystal"><span class="nx-crystal-mark">{STAR_ICON}</span></div>
+        <span class="nx-float-chip chip-a">PDF</span><span class="nx-float-chip chip-b">DOCX</span><span class="nx-float-chip chip-c">RAG</span>
         <span class="nx-particle p-1"></span><span class="nx-particle p-2"></span>
         <span class="nx-particle p-3"></span><span class="nx-particle p-4"></span>
         <div class="nx-stage-label">LIVE VECTOR SEARCH · AI ASSISTED</div>
@@ -854,16 +1004,44 @@ with c3:
     )
 
 if st.session_state.file_names:
-    with st.expander("View indexed documents"):
-        for name in st.session_state.file_names:
-            st.markdown(f"📄 `{name}`")
+    cards = []
+    for index, name in enumerate(st.session_state.file_names):
+        safe_name = html.escape(str(name), quote=True)
+        extension = str(name).rsplit(".", 1)[-1].upper() if "." in str(name) else "FILE"
+        safe_extension = html.escape(extension[:8], quote=True)
+        cards.append(
+            f"""
+            <article class="nx-file-card" role="listitem" style="--card-index:{index}">
+              <div class="nx-file-card-inner">
+                <div class="nx-file-card-top">
+                  <span class="nx-file-glyph" aria-hidden="true"><svg viewBox="0 0 24 28" focusable="false"><path d="M4 1.5h10l6 6V25a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 25V1.5Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M14 1.5V8h6M8 14h8M8 18h8M8 22h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                  <span class="nx-file-type">{safe_extension}</span>
+                </div>
+                <span class="nx-file-name">{safe_name}</span>
+                <span class="nx-file-meta">Indexed and ready to search</span>
+              </div>
+            </article>
+            """
+        )
+    st.markdown(
+        f"""
+        <section class="nx-file-shelf" aria-label="Indexed files">
+          <div class="nx-file-shelf-head">
+            <div><div class="nx-eyebrow">Your knowledge base</div><h2 class="nx-file-shelf-title">Indexed files</h2></div>
+            <span class="nx-file-count">{len(st.session_state.file_names)} files</span>
+          </div>
+          <div class="nx-file-grid" role="list">{''.join(cards)}</div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
 else:
     st.markdown(
         """
         <div class="nx-empty-state">
           <div class="nx-empty-icon">↥</div>
           <div>
-            <div style="font-weight:800;color:#f4f6ff;font-size:1.02rem">Your knowledge base is ready for its first document</div>
+            <div class="nx-empty-title" style="font-weight:800;font-size:1.02rem">Your knowledge base is ready for its first document</div>
             <div class="nx-muted" style="margin-top:.25rem">Use the sidebar upload to add PDF, DOCX, CSV, JSON, TXT, or Markdown files. They will be indexed together for cross-document answers.</div>
           </div>
         </div>
