@@ -781,6 +781,100 @@ if st.session_state.day_mode:
     )
 
 
+# Compact, single-screen workspace and the NEXORA research companion.
+st.markdown(
+    """
+    <style>
+    [data-testid="stMain"] .block-container {max-width:1600px;padding-top:.55rem;padding-bottom:.45rem;}
+    [data-testid="stMain"] [data-testid="stVerticalBlock"] {gap:.55rem;}
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {gap:.55rem;}
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] section {padding:.7rem !important;}
+    .nx-topbar-label {padding:.25rem 0 .55rem;font-size:.76rem;}
+    .nx-topbar-label small {font-size:.61rem;}
+    .nx-top-orbit {width:48px;height:48px;}
+    .nx-top-core {left:14px;top:14px;width:21px;height:21px;}
+    .nx-main-hero {grid-template-columns:minmax(0,1.25fr) minmax(220px,.75fr);gap:.6rem;min-height:205px;padding:1.25rem 1.55rem;margin:.15rem 0 .35rem;}
+    .nx-hero-title {font-size:clamp(1.9rem,3vw,2.8rem);margin:.48rem 0 .55rem;}
+    .nx-hero-description {max-width:570px;font-size:.88rem;line-height:1.55;}
+    .nx-hero-badges {gap:.4rem;margin-top:.75rem;}
+    .nx-hero-badge {font-size:.64rem;padding:.34rem .55rem;}
+    .nx-hero-stage {min-height:178px;}
+    .nx-stage-label {bottom:-.1rem;font-size:.55rem;padding:.33rem .55rem;}
+    .nx-stat {min-height:66px;padding:.58rem .78rem;border-radius:14px;}
+    .nx-stat-label {font-size:.72rem;}
+    .nx-stat-value {font-size:1.3rem;padding-top:.12rem;}
+    .nx-empty-state {gap:.7rem;padding:.68rem .85rem;margin:.4rem 0;border-radius:15px;}
+    .nx-empty-icon {width:40px;height:40px;flex-basis:40px;border-radius:13px;font-size:1.2rem;}
+    .nx-file-shelf {margin:.45rem 0 .25rem;}
+    .nx-file-shelf-head {align-items:center;margin-bottom:.45rem;}
+    .nx-file-shelf-title {font-size:1rem;}
+    .nx-file-grid {display:flex;gap:.6rem;overflow-x:auto;overflow-y:hidden;padding:.1rem .1rem .45rem;scrollbar-width:thin;}
+    .nx-file-card {flex:0 0 clamp(155px,18vw,220px);}
+    .nx-file-card-inner {min-height:78px;padding:.62rem .75rem;border-radius:14px;}
+    .nx-file-card-top {gap:.4rem;}
+    .nx-file-glyph {width:28px;height:31px;border-radius:8px;}
+    .nx-file-glyph svg {width:16px;height:18px;}
+    .nx-file-type {font-size:.55rem;padding:.25rem .38rem;}
+    .nx-file-name {margin:.42rem 0 0;font-size:.76rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .nx-file-meta {margin-top:.12rem;font-size:.56rem;}
+    .st-key-nx-chat-history {min-height:0;max-height:clamp(7rem,calc(100dvh - 580px),20rem);overflow-y:auto;overscroll-behavior:contain;padding-right:.25rem;scrollbar-width:thin;}
+    [data-testid="stMain"] div[data-testid="stChatMessage"] {padding:.48rem .7rem;margin:.22rem 0;border-radius:14px;}
+    [data-testid="stMain"] [data-testid="stChatInput"] {padding-top:.25rem;}
+    .nx-robot {--nx-bot-shell-hi:#e3edcf;--nx-bot-shell:#9db58d;--nx-bot-shell-deep:#3c5645;--nx-bot-face:#102019;--nx-bot-eye:#e2ffad;--nx-bot-glow:rgba(150,197,129,.34);position:relative;width:180px;height:176px;display:grid;place-items:center;perspective:720px;isolation:isolate;}
+    .nx-robot-aura {position:absolute;width:155px;height:145px;border-radius:50%;background:radial-gradient(circle,var(--nx-bot-glow),transparent 70%);filter:blur(9px);animation:nx-bot-aura 4.8s ease-in-out infinite;}
+    .nx-robot-orbit {position:absolute;width:230px;height:86px;border:1px solid rgba(141,212,174,.58);border-radius:50%;transform:rotate(-24deg);animation:nx-bot-orbit 11s linear infinite;}
+    .nx-robot-orbit.orbit-b {width:148px;height:208px;border-color:rgba(203,229,139,.52);transform:rotate(34deg);animation-duration:14s;animation-direction:reverse;}
+    .nx-robot-figure {position:relative;width:126px;height:168px;transform-style:preserve-3d;animation:nx-bot-hover 5.3s ease-in-out infinite;}
+    .nx-robot-antenna {position:absolute;left:61px;top:0;width:4px;height:23px;border-radius:5px;background:linear-gradient(90deg,var(--nx-bot-shell-deep),var(--nx-bot-shell-hi));box-shadow:0 1px 3px rgba(0,0,0,.35);transform:translateZ(16px);}
+    .nx-robot-antenna:after {content:"";position:absolute;left:-5px;top:-7px;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#fff,#d7ff9d 34%,#73a971 76%);box-shadow:0 0 14px var(--nx-bot-glow);animation:nx-bot-beacon 2.4s ease-in-out infinite;}
+    .nx-robot-ear {position:absolute;top:48px;width:13px;height:27px;border:1px solid rgba(239,246,218,.44);border-radius:7px;background:linear-gradient(90deg,var(--nx-bot-shell-deep),var(--nx-bot-shell));box-shadow:0 5px 10px rgba(0,0,0,.28);transform:translateZ(10px);}
+    .nx-robot-ear.left {left:7px;}.nx-robot-ear.right {right:7px;}
+    .nx-robot-head {position:absolute;left:17px;top:20px;width:92px;height:74px;border:1px solid rgba(239,246,218,.48);border-radius:24px;background:radial-gradient(circle at 28% 12%,rgba(255,255,255,.9),transparent 18%),linear-gradient(145deg,var(--nx-bot-shell-hi),var(--nx-bot-shell) 48%,var(--nx-bot-shell-deep));box-shadow:inset 5px 5px 12px rgba(255,255,255,.38),inset -8px -9px 15px rgba(10,22,14,.48),0 14px 24px rgba(0,0,0,.32);transform:translateZ(20px) rotateX(7deg) rotateY(-9deg);}
+    .nx-robot-face {position:absolute;inset:12px 11px;border:1px solid rgba(197,239,177,.4);border-radius:15px;background:radial-gradient(ellipse at 50% 0,rgba(74,139,99,.22),transparent 68%),linear-gradient(145deg,#14271e,var(--nx-bot-face));box-shadow:inset 0 3px 11px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;gap:15px;transform:translateZ(7px);}
+    .nx-robot-eye {width:10px;height:14px;border-radius:50%;background:var(--nx-bot-eye);box-shadow:0 0 7px var(--nx-bot-eye),0 0 15px rgba(194,245,145,.75);animation:nx-bot-blink 5.2s ease-in-out infinite;}
+    .nx-robot-eye:nth-child(2) {animation-delay:.08s;}
+    .nx-robot-mouth {position:absolute;bottom:8px;width:18px;height:3px;border-radius:5px;background:rgba(186,233,151,.9);box-shadow:0 0 7px rgba(186,233,151,.6);}
+    .nx-robot-neck {position:absolute;left:51px;top:91px;width:25px;height:12px;border-radius:4px;background:linear-gradient(90deg,#304838,#d6e7c2 48%,#455e49);transform:translateZ(8px);}
+    .nx-robot-torso {position:absolute;left:24px;top:99px;width:78px;height:51px;border:1px solid rgba(239,246,218,.4);border-radius:14px 14px 20px 20px;background:radial-gradient(circle at 30% 4%,rgba(255,255,255,.7),transparent 20%),linear-gradient(145deg,var(--nx-bot-shell-hi),var(--nx-bot-shell) 40%,var(--nx-bot-shell-deep));box-shadow:inset 4px 4px 10px rgba(255,255,255,.3),inset -8px -8px 13px rgba(10,22,14,.43),0 11px 18px rgba(0,0,0,.28);display:grid;place-items:center;transform:translateZ(13px) rotateX(-4deg);}
+    .nx-robot-chest {width:25px;height:25px;display:grid;place-items:center;border:1px solid rgba(235,248,219,.48);border-radius:9px;background:linear-gradient(145deg,#233e2e,#15271d);color:#e5ffa9;box-shadow:inset 0 1px 3px rgba(255,255,255,.28),0 0 13px var(--nx-bot-glow);}
+    .nx-robot-chest svg {width:13px;height:13px;filter:drop-shadow(0 0 5px rgba(225,255,173,.75));}
+    .nx-robot-arm {position:absolute;top:106px;width:18px;height:39px;border:1px solid rgba(239,246,218,.35);border-radius:10px;background:linear-gradient(145deg,var(--nx-bot-shell-hi),var(--nx-bot-shell-deep));transform-origin:top center;box-shadow:inset 2px 1px 4px rgba(255,255,255,.23),0 5px 8px rgba(0,0,0,.25);}
+    .nx-robot-arm.left {left:12px;transform:rotate(13deg);animation:nx-bot-arm-left 3.8s ease-in-out infinite;}.nx-robot-arm.right {right:12px;transform:rotate(-13deg);animation:nx-bot-arm-right 4.2s ease-in-out infinite;}
+    .nx-robot-leg {position:absolute;top:146px;width:20px;height:20px;border-radius:5px 5px 9px 9px;background:linear-gradient(145deg,var(--nx-bot-shell),var(--nx-bot-shell-deep));box-shadow:inset 2px 1px 4px rgba(255,255,255,.18),0 6px 9px rgba(0,0,0,.24);transform:translateZ(7px);}
+    .nx-robot-leg.left {left:38px;}.nx-robot-leg.right {right:38px;}
+    @keyframes nx-bot-hover {0%,100%{transform:translateY(1px) rotateX(2deg) rotateY(-5deg)}50%{transform:translateY(-7px) rotateX(-2deg) rotateY(5deg)}}
+    @keyframes nx-bot-orbit {to{rotate:360deg}}
+    @keyframes nx-bot-aura {0%,100%{opacity:.48;scale:.9}50%{opacity:.92;scale:1.1}}
+    @keyframes nx-bot-beacon {0%,100%{scale:.88;filter:brightness(.95)}50%{scale:1.12;filter:brightness(1.25)}}
+    @keyframes nx-bot-blink {0%,42%,48%,100%{scale:1 1}45%{scale:1 .12}}
+    @keyframes nx-bot-arm-left {0%,100%{rotate:-4deg}50%{rotate:8deg}}
+    @keyframes nx-bot-arm-right {0%,100%{rotate:4deg}50%{rotate:-8deg}}
+    @media (min-width:1024px) and (min-height:680px) {
+      html,body,.stApp,[data-testid="stAppViewContainer"] {height:100dvh !important;overflow:hidden !important;}
+      [data-testid="stMain"] {height:calc(100dvh - 3.6rem) !important;overflow:hidden !important;}
+      [data-testid="stMain"] .block-container {height:100%;max-height:100%;overflow:hidden !important;box-sizing:border-box;}
+      [data-testid="stSidebar"],[data-testid="stSidebar"] > div:first-child {height:100dvh;max-height:100dvh;overflow-y:auto;}
+    }
+    @media (max-width:1180px) {
+      .nx-main-hero {grid-template-columns:minmax(0,1fr) 205px;padding:1.1rem 1.2rem;}
+      .nx-robot {scale:.9;}
+      .nx-hero-title {font-size:clamp(1.8rem,3.2vw,2.4rem);}
+    }
+    @media (max-width:900px) {
+      .nx-main-hero {grid-template-columns:1fr;min-height:0;}
+      .nx-hero-stage {min-height:160px;}
+      .nx-robot {scale:.82;}
+      [data-testid="stMain"] .block-container {padding-top:.55rem;padding-bottom:4.2rem;}
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nx-robot *, .nx-robot:before, .nx-robot:after {animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 # -------------------------- Session state --------------------------
 
 DEFAULTS = {
@@ -903,9 +997,10 @@ with st.sidebar:
         ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
         index=0,
     )
-    chunk_size = st.slider("Chunk size", 500, 2000, 1000, step=100)
-    chunk_overlap = st.slider("Chunk overlap", 0, 400, 150, step=50)
-    top_k = st.slider("Retrieved passages", 2, 10, 4)
+    with st.expander("Advanced retrieval", expanded=False):
+        chunk_size = st.slider("Chunk size", 500, 2000, 1000, step=100)
+        chunk_overlap = st.slider("Chunk overlap", 0, 400, 150, step=50)
+        top_k = st.slider("Retrieved passages", 2, 10, 4)
 
     st.divider()
     with st.expander("API key settings"):
@@ -1005,7 +1100,21 @@ st.markdown(
       <div class="nx-hero-stage" aria-hidden="true">
         <div class="nx-hero-aura"></div>
         <div class="nx-hero-ring ring-1"></div><div class="nx-hero-ring ring-2"></div><div class="nx-hero-ring ring-3"></div>
-        <div class="nx-hero-crystal"><span class="nx-crystal-mark">{STAR_ICON}</span></div>
+        <div class="nx-robot">
+          <div class="nx-robot-aura"></div>
+          <div class="nx-robot-orbit"></div><div class="nx-robot-orbit orbit-b"></div>
+          <div class="nx-robot-figure">
+            <div class="nx-robot-antenna"></div>
+            <div class="nx-robot-ear left"></div><div class="nx-robot-ear right"></div>
+            <div class="nx-robot-head">
+              <div class="nx-robot-face"><span class="nx-robot-eye"></span><span class="nx-robot-eye"></span><span class="nx-robot-mouth"></span></div>
+            </div>
+            <div class="nx-robot-neck"></div>
+            <div class="nx-robot-arm left"></div><div class="nx-robot-arm right"></div>
+            <div class="nx-robot-torso"><div class="nx-robot-chest">{STAR_ICON}</div></div>
+            <div class="nx-robot-leg left"></div><div class="nx-robot-leg right"></div>
+          </div>
+        </div>
         <span class="nx-float-chip chip-a">PDF</span><span class="nx-float-chip chip-b">DOCX</span><span class="nx-float-chip chip-c">RAG</span>
         <span class="nx-particle p-1"></span><span class="nx-particle p-2"></span>
         <span class="nx-particle p-3"></span><span class="nx-particle p-4"></span>
@@ -1016,7 +1125,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-c1, c2, c3 = st.columns(3)
+c1, c2, c3 = st.columns(3, gap="small")
 with c1:
     st.markdown(
         f'<div class="nx-stat"><div class="nx-stat-label">Documents</div><div class="nx-stat-value">{len(st.session_state.file_names)}</div></div>',
@@ -1047,7 +1156,7 @@ if st.session_state.file_names:
                   <span class="nx-file-glyph" aria-hidden="true"><svg viewBox="0 0 24 28" focusable="false"><path d="M4 1.5h10l6 6V25a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 25V1.5Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M14 1.5V8h6M8 14h8M8 18h8M8 22h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
                   <span class="nx-file-type">{safe_extension}</span>
                 </div>
-                <span class="nx-file-name">{safe_name}</span>
+                <span class="nx-file-name" title="{safe_name}">{safe_name}</span>
                 <span class="nx-file-meta">Indexed and ready to search</span>
               </div>
             </article>
@@ -1099,15 +1208,16 @@ RAG_PROMPT = ChatPromptTemplate.from_messages(
 if st.session_state.vectorstore is None:
     st.stop()
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-        if msg["role"] == "assistant" and msg.get("sources"):
-            with st.expander("📚 Sources used"):
-                for source in msg["sources"]:
-                    st.markdown(f"**{source['file']} · {source['location']}**")
-                    st.text(source["text"])
-                    st.divider()
+with st.container(key="nx-chat-history"):
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+            if msg["role"] == "assistant" and msg.get("sources"):
+                with st.expander("📚 Sources used"):
+                    for source in msg["sources"]:
+                        st.markdown(f"**{source['file']} · {source['location']}**")
+                        st.text(source["text"])
+                        st.divider()
 
 question = st.chat_input("Ask anything about your uploaded files…")
 
@@ -1162,7 +1272,7 @@ if question:
         )
 
 st.markdown(
-    '<p style="text-align:center;color:#7c879a;font-size:.76rem;padding:1.5rem 0">NEXORA KNOWLEDGE STUDIO · Verify important answers against the cited source passages.</p>',
+    '<p style="text-align:center;color:#7c879a;font-size:.66rem;padding:.35rem 0">NEXORA KNOWLEDGE STUDIO · Verify important answers against the cited source passages.</p>',
     unsafe_allow_html=True,
 )
 
