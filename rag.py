@@ -793,7 +793,7 @@ st.markdown(
     .nx-topbar-label small {font-size:.61rem;}
     .nx-top-orbit {width:48px;height:48px;}
     .nx-top-core {left:14px;top:14px;width:21px;height:21px;}
-    .nx-main-hero {grid-template-columns:minmax(0,1.25fr) minmax(220px,.75fr);gap:.6rem;min-height:205px;padding:1.25rem 1.55rem;margin:.15rem 0 .35rem;}
+    .nx-main-hero {grid-template-columns:minmax(0,1.25fr) minmax(220px,.75fr);gap:.6rem;min-height:205px;padding:1.25rem 1.55rem;margin:.15rem 0 1rem !important;}
     .nx-hero-title {font-size:clamp(1.9rem,3vw,2.8rem);margin:.48rem 0 .55rem;}
     .nx-hero-description {max-width:570px;font-size:.88rem;line-height:1.55;}
     .nx-hero-badges {gap:.4rem;margin-top:.75rem;}
@@ -803,7 +803,7 @@ st.markdown(
     .nx-stat {min-height:66px;padding:.58rem .78rem;border-radius:14px;}
     .nx-stat-label {font-size:.72rem;}
     .nx-stat-value {font-size:1.3rem;padding-top:.12rem;}
-    .nx-empty-state {gap:.7rem;padding:.68rem .85rem;margin:.4rem 0;border-radius:15px;}
+    .nx-empty-state {gap:.7rem;padding:.68rem .85rem;margin:1rem 0 .4rem !important;border-radius:15px;}
     .nx-empty-icon {width:40px;height:40px;flex-basis:40px;border-radius:13px;font-size:1.2rem;}
     .nx-file-shelf {margin:.45rem 0 .25rem;}
     .nx-file-shelf-head {align-items:center;margin-bottom:.45rem;}
